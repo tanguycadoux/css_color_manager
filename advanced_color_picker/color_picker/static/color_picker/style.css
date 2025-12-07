@@ -1,0 +1,14 @@
+/* | RESET | */
+
+h1, h2{
+    margin: 0;
+}
+
+/* | BLOCK | */
+
+.color-square{
+    border: 1px solid black;
+    display: inline-block;
+    height: 1rem;
+    width:  1rem;
+}

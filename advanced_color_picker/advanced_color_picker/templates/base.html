@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Couleurs</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+    {% block head %}{% endblock head %}
+</head>
+
+<body>
+    <nav>
+        {% block nav %}{% endblock nav %}
+    </nav>
+    <div>
+        {% block content %}{% endblock content %}
+    </div>
+    <div class="admin-side-panel">
+        <a href="{% url 'admin:index' %}" target="_blank">Admin</a>
+    </div>
+</body>
+</html>
