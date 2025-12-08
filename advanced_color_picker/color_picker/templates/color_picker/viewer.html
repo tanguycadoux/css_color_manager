@@ -21,7 +21,13 @@
 
     <ul>
         {% for color in colors%}
-            <li><span class="color-square" style="background-color: {{ color.to_css }}"></span> {{ color }}</li>
+            <li><span class="color-square" style="background-color: {{ color.to_css }}"></span>{{ color }}
+                <ol>
+                    <li>{{ color.to_rgb }}</li>
+                    <li>{{ color.to_hsl }}</li>
+                    <li>{{ color.to_oklch }}</li>
+                </ol>
+            </li>
         {% endfor %}
     </ul>
 
@@ -218,6 +224,37 @@
             return [ctx, x_min_rect, x_max_rect, y_min_rect, y_max_rect];
         }
 
+        function colors_on_oklch_ch_wheel(colors, ctx, wheel_center_x, wheel_center_y, wheel_r) {
+            colors.forEach(c => {
+                const angle = c.h * Math.PI / 180;
+                const radius = c.c/0.37 * wheel_r;
+
+                console.log(angle)
+
+                const x = wheel_center_x + Math.cos(angle) * radius;
+                const y = wheel_center_y - Math.sin(angle) * radius;
+
+                ctx.beginPath();
+                ctx.fillStyle = c.css;
+                ctx.arc(x, y, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            });
+        }
+
+        function colors_on_oklch_lc_rect(colors, ctx, rect_x_min, rect_x_max, rect_y_min, rect_y_max) {
+            colors.forEach(c => {
+                const x = mapRange(c.c, 0, 0.37, rect_x_min, rect_x_max);
+                const y = mapRange(c.l, 0, 1, rect_y_max, rect_y_min);
+
+                ctx.beginPath();
+                ctx.fillStyle = c.css;
+                ctx.arc(x, y, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            });
+        }
+
         let margin = 50;
 
         const colors_hsl = [
@@ -233,13 +270,28 @@
             {% endfor %}
         ];
 
+        const colors_oklch = [
+            {% for c in colors %}
+                {% with oklch=c.to_oklch %}
+                    {
+                        l: {{ oklch.0 }},
+                        c: {{ oklch.1 }},
+                        h: {{ oklch.2 }},
+                        css: "{{ c.to_css }}"
+                    },
+                {% endwith %}
+            {% endfor %}
+        ];
+
         const [wheel_ctx, wheel_center_x, wheel_center_y, wheel_r]       = hsl_hs_wheel(margin);
         const [rect_ctx, rect_x_min, rect_x_max, rect_y_min, rect_y_max] = hsl_sl_rect(margin);
         colors_on_hsl_hs_wheel(colors_hsl, wheel_ctx, wheel_center_x, wheel_center_y, wheel_r);
         colors_on_hsl_sl_rect(colors_hsl, rect_ctx, rect_x_min, rect_x_max, rect_y_min, rect_y_max);
-        
-        oklch_ch_wheel(margin);
-        oklch_lc_rect(margin);
+
+        const [oklch_wheel_ctx, oklch_wheel_center_x, oklch_wheel_center_y, oklch_wheel_r]             = oklch_ch_wheel(margin);
+        const [oklch_rect_ctx, oklch_rect_x_min, oklch_rect_x_max, oklch_rect_y_min, oklch_rect_y_max] = oklch_lc_rect(margin);
+        colors_on_oklch_ch_wheel(colors_oklch, oklch_wheel_ctx, oklch_wheel_center_x, oklch_wheel_center_y, oklch_wheel_r);
+        colors_on_oklch_lc_rect(colors_oklch, oklch_rect_ctx, oklch_rect_x_min, oklch_rect_x_max, oklch_rect_y_min, oklch_rect_y_max);
     </script>
 
 {% endblock content %}
