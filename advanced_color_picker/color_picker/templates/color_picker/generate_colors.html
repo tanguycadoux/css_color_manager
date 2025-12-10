@@ -1,0 +1,51 @@
+{% extends 'color_picker/base.html' %}
+
+{% block content %}
+    <h1>Générer des couleurs pour {{ family.name }}</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Générer</button>
+    </form>
+
+    <div id="preview"></div>
+
+    <script>
+        function updatePreview() {
+            const Lmin = parseFloat(document.getElementById("id_l_min").value);
+            const Lmax = parseFloat(document.getElementById("id_l_max").value);
+            const Cmin = parseFloat(document.getElementById("id_c_min").value);
+            const Cmax = parseFloat(document.getElementById("id_c_max").value);
+            const Hmin = parseFloat(document.getElementById("id_h_min").value);
+            const Hmax = parseFloat(document.getElementById("id_h_max").value);
+            const count = parseInt(document.getElementById("id_count").value);
+
+            const preview = document.getElementById("preview");
+            preview.innerHTML = "";
+
+            if (!count) return;
+
+            for (let i = 0; i < count; i++) {
+                const t = count > 1 ? i / (count - 1) : 0;
+
+                const L = Lmin + (Lmax - Lmin) * t;
+                const C = Cmin + (Cmax - Cmin) * t;
+                const H = Hmin + (Hmax - Hmin) * t;
+
+                const div = document.createElement("div");
+                div.classList.add("color-square")
+                div.style.background = `oklch(${L} ${C} ${H})`;
+                div.style.width = `2rem`;
+                div.style.height = `2rem`;
+
+                preview.appendChild(div);
+            }
+        }
+
+        document.querySelectorAll("input").forEach(input => {
+            input.addEventListener("input", updatePreview);
+        });
+    </script>
+
+{% endblock content %}

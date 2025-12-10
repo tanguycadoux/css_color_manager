@@ -49,6 +49,14 @@ def oklch_to_rgb(l, c, h):
     return (r*255, g*255, b*255)
 
 
+class ColorFamily(models.Model):
+    name = models.CharField(max_length=50, blank=True)
+
+
+    def __str__(self):
+        return self.name
+
+
 class Color(models.Model):
     MODE_CHOICES = [
         ("rgb", "RGB"),
@@ -58,7 +66,10 @@ class Color(models.Model):
 
     name = models.CharField(max_length=100, blank=True)
     mode = models.CharField(max_length=10, choices=MODE_CHOICES, null=True, blank=True)
+    family = models.ForeignKey(ColorFamily, on_delete=models.CASCADE, related_name="colors", null=True, blank=True)
     values = models.JSONField(null=True, blank=True)
+    created_datetime = models.DateTimeField(auto_now_add=True)
+    updated_datetime = models.DateTimeField(auto_now=True)
 
 
     def __str__(self):

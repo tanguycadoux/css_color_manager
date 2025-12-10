@@ -1,9 +1,11 @@
 from django.urls import path
 
-from . import views
+from .views import index, viewer, generate_colors, FamiliesListView
 
 
 urlpatterns = [
-    path('', views.index, name="index"),
-    path('viewer/', views.viewer, name="viewer"),
+    path('', index, name="index"),
+    path('viewer/', viewer, name="viewer"),
+    path('families/', FamiliesListView.as_view(), name="families_list"),
+    path('generate_colors/<int:family_id>', generate_colors, name="generate_colors"),
 ]

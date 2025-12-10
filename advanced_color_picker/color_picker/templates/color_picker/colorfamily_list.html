@@ -1,0 +1,11 @@
+{% extends 'color_picker/base.html' %}
+
+{% block content %}
+    <h1>Liste des familles</h1>
+
+    <ul>
+        {% for family in object_list %}
+            <li>{{ family }} <a href="{% url 'generate_colors' family.pk %}">Créer des couleurs</a></li>
+        {% endfor %}
+    </ul>
+{% endblock content %}
