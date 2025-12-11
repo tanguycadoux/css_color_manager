@@ -22,17 +22,27 @@
         <div class="viewer-page__colors-select-wrapper">
             <h2>Couleurs</h2>
 
-            <ul>
+            <ul class="color-family-list">
                 <!-- {% for color in colors%}
                     <li><span class="color-square" style="background-color: {{ color.to_css }}"></span>{{ color }}</li>
                 {% endfor %} -->
 
                 {% for family in families%}
                     <li>
-                        <p>{{ family.family }}</p>
-                        <ul>
+                        {% with fam=family.family%}
+                            <label>
+                                <input type="checkbox" id="color_viewer-select-family-{{ fam.pk }}" data-family="{{ fam.pk }}" checked/>
+                                {{ fam }}
+                            </label>
+                        {% endwith %}
+                        <ul class="color-list">
                             {% for color in family.colors%}
-                                <li><span class="color-square" style="background-color: {{ color.to_css }}"></span>{{ color }}</li>
+                                <li>
+                                    <label>
+                                        <input type="checkbox" id="color_viewer-select-color-{{ color.pk }}" data-color_pk="{{ color.pk }}" checked/>
+                                        <span class="color-square" style="background-color: {{ color.to_css }}"></span>{{ color }}
+                                    </label>
+                                </li>
                             {% endfor %}
                         </ul>
                     </li>
@@ -42,26 +52,99 @@
     </div>
 
     <script defer>
-        window.addEventListener("load", (event) => {
-            const colors_oklch = [
-                {% for fam in families%}
-                    {% for c in fam.colors %}
-                        {% with oklch=c.to_oklch %}
-                            {% if c.to_css %}
-                                {
-                                    l: {{ oklch.0 }},
-                                    c: {{ oklch.1 }},
-                                    h: {{ oklch.2 }},
-                                    css: "{{ c.to_css }}"
-                                },
-                            {% endif %}
-                        {% endwith %}
-                    {% endfor %}
+        const colors = [
+            {% for fam in families%}
+                {% for c in fam.colors %}
+                    {% with oklch=c.to_oklch %}
+                        {% if c.to_css %}
+                            {
+                                l: {{ oklch.0 }},
+                                c: {{ oklch.1 }},
+                                h: {{ oklch.2 }},
+                                css: "{{ c.to_css }}",
+                                pk: "{{ c.pk }}"
+                            },
+                        {% endif %}
+                    {% endwith %}
                 {% endfor %}
-            ];
-
-            render_colorwheels(colors_oklch);
+            {% endfor %}
+        ];
+        
+        window.addEventListener("load", async (event) => {
+            const inputs_family = document.querySelectorAll("input[id^=color_viewer-select-family-]");
+            const inputs_colors = document.querySelectorAll("input[id^=color_viewer-select-color-]");
+            
+            for (const input of inputs_family) {
+                updateSelectedColors(input);
+                input.addEventListener("change", async (event) => {
+                    updateSelectedColors(event.target);
+                    await colorSelectProcess();
+                });
+            }
+            for (const input of inputs_colors) {
+                updateSelectedFamily(input);
+                input.addEventListener("change", async (event) => {
+                    updateSelectedFamily(event.target);
+                    await colorSelectProcess();
+                });
+            }
+            
+            colorSelectProcess();
         });
+
+        function selectColors() {
+            const inputs = document.querySelectorAll("input[id^=color_viewer-select-color-]:checked");
+
+            const colors_pks = []
+            for (const input of inputs) {
+                colors_pks.push(input.dataset.color_pk);
+            }
+
+            const filtered_colors = [];
+            for (const color of colors) {
+                if (colors_pks.includes(color.pk)) {
+                    filtered_colors.push(color);
+                }
+            }
+
+            return filtered_colors;
+        }
+
+        function updateSelectedColors(input) {
+            const li_parent = input.closest("li");
+            const color_inputs = li_parent.querySelectorAll("input[id^=color_viewer-select-color-]");
+            for (const color_input of color_inputs) {
+                color_input.checked = input.checked;
+            }
+        }
+
+        function updateSelectedFamily(input) {
+            const family_li = input.closest("ul").closest("li");
+            const fam_input =     family_li.querySelector("input[id^=color_viewer-select-family-]");
+            const colors_inputs = family_li.querySelectorAll("input[id^=color_viewer-select-color-]");
+
+            var checked_list = []
+            for (const input of colors_inputs) {
+                checked_list.push(input.checked);
+            }
+            const all_checked  = checked_list.every(v => v === true);
+            const none_checked = checked_list.every(v => v === false);
+
+            if (all_checked) {
+                fam_input.checked = true;
+                fam_input.indeterminate = false;
+            } else if (none_checked) {
+                fam_input.checked = false;
+                fam_input.indeterminate = false;
+            } else {
+                fam_input.checked = false;
+                fam_input.indeterminate = true;
+            }
+        }
+
+        async function colorSelectProcess() {
+            render_colorwheels(selectColors());
+        }
     </script>
 
 {% endblock content %}

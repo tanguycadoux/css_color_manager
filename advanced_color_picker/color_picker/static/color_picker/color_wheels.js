@@ -118,7 +118,7 @@ function colors_on_hsl_sl_rect(colors, ctx, rect_x_min, rect_x_max, rect_y_min, 
     });
 }
 
-function oklch_ch_wheel(margin) {
+async function oklch_ch_wheel(margin) {
     const canvas = document.getElementById("oklch-wheel-1");
     const ctx = canvas.getContext("2d");
 
@@ -132,34 +132,44 @@ function oklch_ch_wheel(margin) {
     const wheel_center_x = canvas_w  / 2;
     const wheel_center_y = canvas_h / 2;
 
-    const x_min_wheel = wheel_center_x - wheel_r;
-    const x_max_wheel = wheel_center_x + wheel_r;
-    const y_min_wheel = wheel_center_y - wheel_r;
-    const y_max_wheel = wheel_center_y + wheel_r;
+    const saved = localStorage.getItem("oklch-colorwheel_1");
 
-    for (let x_cvs = x_min_wheel; x_cvs < x_max_wheel; x_cvs++) {
-        for (let y_cvs = y_min_wheel; y_cvs < y_max_wheel; y_cvs++) {
-            // X vers la droite
-            // Y vers le bas
-            
-            let x_wrt_center = x_cvs-wheel_center_x;
-            let y_wrt_center = y_cvs-wheel_center_y;
-            let dist_to_center = Math.sqrt((x_wrt_center)**2 + (y_wrt_center)**2);
-            
-            if (dist_to_center <= wheel_r) {
-                let h = -x_y_to_angle(x_wrt_center, y_wrt_center)
-                let c = mapRange(dist_to_center/wheel_r, 0, 1, 0, 0.09);
-                let l = 0.95;
+    if (saved) {
+        const img = await loadImage(saved);
+        ctx.drawImage(img, 0, 0);
+    } else {
+        const x_min_wheel = wheel_center_x - wheel_r;
+        const x_max_wheel = wheel_center_x + wheel_r;
+        const y_min_wheel = wheel_center_y - wheel_r;
+        const y_max_wheel = wheel_center_y + wheel_r;
 
-                ctx.fillStyle = `oklch(${l} ${c} ${h})`;
-                ctx.fillRect(x_cvs, y_cvs, 1, 1);
+        for (let x_cvs = x_min_wheel; x_cvs < x_max_wheel; x_cvs++) {
+            for (let y_cvs = y_min_wheel; y_cvs < y_max_wheel; y_cvs++) {
+                // X vers la droite
+                // Y vers le bas
+                
+                let x_wrt_center = x_cvs-wheel_center_x;
+                let y_wrt_center = y_cvs-wheel_center_y;
+                let dist_to_center = Math.sqrt((x_wrt_center)**2 + (y_wrt_center)**2);
+                
+                if (dist_to_center <= wheel_r) {
+                    let h = -x_y_to_angle(x_wrt_center, y_wrt_center)
+                    let c = mapRange(dist_to_center/wheel_r, 0, 1, 0, 0.09);
+                    let l = 0.95;
+
+                    ctx.fillStyle = `oklch(${l} ${c} ${h})`;
+                    ctx.fillRect(x_cvs, y_cvs, 1, 1);
+                }
             }
         }
+        const data = canvas.toDataURL("image/png");
+        localStorage.setItem("oklch-colorwheel_1", data);
     }
     return [ctx, wheel_center_x, wheel_center_y, wheel_r];
 }
 
-function oklch_lc_rect(margin) {
+
+async function oklch_lc_rect(margin) {
     const canvas = document.getElementById("oklch-wheel-2");
     const ctx = canvas.getContext("2d");
 
@@ -174,19 +184,30 @@ function oklch_lc_rect(margin) {
     const y_min_rect = margin;
     const y_max_rect = margin + rect_h;
 
-    for (let x_cvs = x_min_rect; x_cvs < x_max_rect; x_cvs++) {
-        for (let y_cvs = y_min_rect; y_cvs < y_max_rect; y_cvs++) {
-            // X vers la droite
-            // Y vers le bas
+    const saved = localStorage.getItem("oklch-colorwheel_2");
 
-            let h = 0;
-            let c = mapRange(x_cvs, x_min_rect, x_max_rect, 0, 0.05);
-            let l = mapRange(y_cvs, y_max_rect, y_min_rect, 0.15, 0.9);
+    if (saved) {
+        const img = await loadImage(saved);
+        ctx.drawImage(img, 0, 0);
+    } else {
+        for (let x_cvs = x_min_rect; x_cvs < x_max_rect; x_cvs++) {
+            for (let y_cvs = y_min_rect; y_cvs < y_max_rect; y_cvs++) {
+                // X vers la droite
+                // Y vers le bas
 
-            ctx.fillStyle = `oklch(${l} ${c} ${h})`;
-            ctx.fillRect(x_cvs, y_cvs, 1, 1);
+                let h = 0;
+                let c = mapRange(x_cvs, x_min_rect, x_max_rect, 0, 0.05);
+                let l = mapRange(y_cvs, y_max_rect, y_min_rect, 0.15, 0.9);
+
+                ctx.fillStyle = `oklch(${l} ${c} ${h})`;
+                ctx.fillRect(x_cvs, y_cvs, 1, 1);
+            }
         }
+
+        const data = canvas.toDataURL("image/png");
+        localStorage.setItem("oklch-colorwheel_2", data);
     }
+
     return [ctx, x_min_rect, x_max_rect, y_min_rect, y_max_rect];
 }
 
@@ -194,8 +215,6 @@ function colors_on_oklch_ch_wheel(colors, ctx, wheel_center_x, wheel_center_y, w
     colors.forEach(c => {
         const angle = c.h * Math.PI / 180;
         const radius = c.c/0.37 * wheel_r;
-
-        console.log(angle)
 
         const x = wheel_center_x + Math.cos(angle) * radius;
         const y = wheel_center_y - Math.sin(angle) * radius;
@@ -221,12 +240,20 @@ function colors_on_oklch_lc_rect(colors, ctx, rect_x_min, rect_x_max, rect_y_min
     });
 }
 
-function render_colorwheels(colors) {
+function loadImage(src) {
+    return new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.src = src;
+    });
+}
+
+async function render_colorwheels(colors) {
     let margin = 50;
 
-    const [oklch_wheel_ctx, oklch_wheel_center_x, oklch_wheel_center_y, oklch_wheel_r]             = oklch_ch_wheel(margin);
-    const [oklch_rect_ctx, oklch_rect_x_min, oklch_rect_x_max, oklch_rect_y_min, oklch_rect_y_max] = oklch_lc_rect(margin);
-    
-    colors_on_oklch_ch_wheel(colors, oklch_wheel_ctx, oklch_wheel_center_x, oklch_wheel_center_y, oklch_wheel_r);
-    colors_on_oklch_lc_rect(colors, oklch_rect_ctx, oklch_rect_x_min, oklch_rect_x_max, oklch_rect_y_min, oklch_rect_y_max);
+    const [wheel_ctx, cx, cy, r] = await oklch_ch_wheel(margin);
+    colors_on_oklch_ch_wheel(colors, wheel_ctx, cx, cy, r);
+
+    const [rect_ctx, x_min, x_max, y_min, y_max] = await oklch_lc_rect(margin);
+    colors_on_oklch_lc_rect(colors, rect_ctx, x_min, x_max, y_min, y_max);
 }

@@ -28,3 +28,23 @@ h1, h2{
 .viewer-page__colors-select-wrapper{
     overflow-y: auto;
 }
+
+.viewer-page__colors-select-wrapper h2{
+    margin-bottom: 1rem;
+}
+
+.color-family-list{
+    padding-left: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.color-family-list > li{
+    margin-bottom: 1rem;
+}
+
+.color-list{
+    padding-left: 1rem;
+    margin: 0;
+    list-style: none;
+}

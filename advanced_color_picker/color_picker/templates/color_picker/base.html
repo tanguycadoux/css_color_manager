@@ -7,8 +7,19 @@
 
 {% block nav %}
     <ul>
-        <li><a href="{% url 'index' %}">Accueil</a></li>
-        <li><a href="{% url 'viewer' %}">Viewer</a></li>
-        <li><a href="{% url 'families_list' %}">Liste des familles</a></li>
+        {% url 'index' as index_url %}
+        <li><a class="nav-link {% if request.path == index_url %}nav-link--active{% endif %}" href="{% url 'index' %}">
+            Accueil
+        </a></li>
+
+        {% url 'viewer' as viewer_url %}
+        <li><a class="nav-link {% if request.path == viewer_url %}nav-link--active{% endif %}" href="{% url 'viewer' %}">
+            Viewer
+        </a></li>
+        
+        {% url 'families_list' as families_list_url %}
+        <li><a class="nav-link {% if request.path == families_list_url %}nav-link--active{% endif %}" href="{% url 'families_list' %}">
+            Liste des familles
+        </a></li>
     </ul>
 {% endblock nav %}
