@@ -5,7 +5,10 @@
 
     <ul>
         {% for family in object_list %}
-            <li>{{ family }} <a href="{% url 'generate_colors' family.pk %}">Créer des couleurs</a></li>
+            <li>{{ family }}
+                <a href="{% url 'generate_colors' family.pk %}">Créer des couleurs</a>
+                <a href="{% url 'css_parameters' family.pk %}" target="_blank">Voir paramètres CSS</a>
+            </li>
         {% endfor %}
     </ul>
 {% endblock content %}

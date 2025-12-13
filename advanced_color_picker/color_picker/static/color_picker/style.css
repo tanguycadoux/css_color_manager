@@ -1,6 +1,6 @@
 /* | RESET | */
 
-h1, h2{
+h1, h2, h3, h4, h5, h6{
     margin: 0;
 }
 
@@ -18,7 +18,7 @@ h1, h2{
     grid-template-columns: auto 1fr;
     grid-auto-rows: min-content;
     height: 100%;
-    overflow: hidden;
+    gap: 1rem;
 }
 
 .viewer-page__wrapper h1{
@@ -33,13 +33,28 @@ h1, h2{
     margin-bottom: 1rem;
 }
 
+.viewer__wrapper{
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 1rem;
+}
+
+.viewer__2d{
+    grid-column: 1/2;
+}
+
+.viewer__3d{
+    grid-column: 2/3;
+    grid-row: 1/3;
+}
+
 .color-family-list{
     padding-left: 0;
     margin: 0;
     list-style: none;
 }
 
-.color-family-list > li{
+.color-family-list details:open{
     margin-bottom: 1rem;
 }
 

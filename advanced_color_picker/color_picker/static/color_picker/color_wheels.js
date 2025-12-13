@@ -257,3 +257,16 @@ async function render_colorwheels(colors) {
     const [rect_ctx, x_min, x_max, y_min, y_max] = await oklch_lc_rect(margin);
     colors_on_oklch_lc_rect(colors, rect_ctx, x_min, x_max, y_min, y_max);
 }
+
+function oklchToXYZ(l, c, h) {
+    const angle = h * Math.PI / 180;
+
+    const radius = c;
+    const y = l;
+
+    const x = Math.cos(angle) * radius;
+    const z = -Math.sin(angle) * radius;
+
+    return {"x": x, "y": y, "z": z};
+}
+

@@ -13,9 +13,20 @@
         <div>
             <h2>OKLCH wheel</h2>
 
-            <div>
-                <canvas id="oklch-wheel-1" width="600" height="600"></canvas>
-                <canvas id="oklch-wheel-2" width="600" height="600"></canvas>
+            <div class="viewer__wrapper">
+                <div>
+                    <h3>Chroma - Hue</h3>
+                    <canvas id="oklch-wheel-1" width="400" height="400"></canvas>
+                </div>
+                <div class="viewer__2d">
+                    <h3>Lightness - Chroma</h3>
+                    <canvas id="oklch-wheel-2" width="400" height="400"></canvas>
+                </div>
+                <div class="viewer__3d">
+                    <h3>3D</h3>
+                    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+                    <div id="oklch-wheel-3D" style="width:800px; height:800px;"></div>
+                </div>
             </div>
         </div>
 
@@ -23,28 +34,28 @@
             <h2>Couleurs</h2>
 
             <ul class="color-family-list">
-                <!-- {% for color in colors%}
-                    <li><span class="color-square" style="background-color: {{ color.to_css }}"></span>{{ color }}</li>
-                {% endfor %} -->
-
                 {% for family in families%}
                     <li>
-                        {% with fam=family.family%}
-                            <label>
-                                <input type="checkbox" id="color_viewer-select-family-{{ fam.pk }}" data-family="{{ fam.pk }}" checked/>
-                                {{ fam }}
-                            </label>
-                        {% endwith %}
-                        <ul class="color-list">
-                            {% for color in family.colors%}
-                                <li>
+                        <details>
+                            <summary>
+                                {% with fam=family.family%}
                                     <label>
-                                        <input type="checkbox" id="color_viewer-select-color-{{ color.pk }}" data-color_pk="{{ color.pk }}" checked/>
-                                        <span class="color-square" style="background-color: {{ color.to_css }}"></span>{{ color }}
+                                        <input type="checkbox" id="color_viewer-select-family-{{ fam.pk }}" data-family="{{ fam.pk }}" checked/>
+                                        {{ fam }}
                                     </label>
-                                </li>
-                            {% endfor %}
-                        </ul>
+                                {% endwith %}
+                            </summary>
+                            <ul class="color-list">
+                                {% for color in family.colors%}
+                                    <li>
+                                        <label>
+                                            <input type="checkbox" id="color_viewer-select-color-{{ color.pk }}" data-color_pk="{{ color.pk }}" checked/>
+                                            <span class="color-square" style="background-color: {{ color.to_css }}"></span>{{ color }}
+                                        </label>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </details>
                     </li>
                 {% endfor %}
             </ul>
@@ -62,6 +73,11 @@
                                 c: {{ oklch.1 }},
                                 h: {{ oklch.2 }},
                                 css: "{{ c.to_css }}",
+                                rgb: {
+                                    "r": {{ c.to_rgb.0 }},
+                                    "g": {{ c.to_rgb.1 }},
+                                    "b": {{ c.to_rgb.2 }} 
+                                },
                                 pk: "{{ c.pk }}"
                             },
                         {% endif %}
@@ -73,23 +89,26 @@
         window.addEventListener("load", async (event) => {
             const inputs_family = document.querySelectorAll("input[id^=color_viewer-select-family-]");
             const inputs_colors = document.querySelectorAll("input[id^=color_viewer-select-color-]");
-            
+
+            const {renderer, scene, camera} = threejsInit();
+            let currentPointsMesh = null;
+
             for (const input of inputs_family) {
                 updateSelectedColors(input);
                 input.addEventListener("change", async (event) => {
                     updateSelectedColors(event.target);
-                    await colorSelectProcess();
+                    await colorRenderProcess(renderer, scene, camera);
                 });
             }
             for (const input of inputs_colors) {
                 updateSelectedFamily(input);
                 input.addEventListener("change", async (event) => {
                     updateSelectedFamily(event.target);
-                    await colorSelectProcess();
+                    await colorRenderProcess(renderer, scene, camera);
                 });
             }
             
-            colorSelectProcess();
+            colorRenderProcess(renderer, scene, camera);
         });
 
         function selectColors() {
@@ -142,9 +161,90 @@
             }
         }
 
-        async function colorSelectProcess() {
-            render_colorwheels(selectColors());
+        async function colorRenderProcess(renderer, scene, camera) {
+            const colors = selectColors()
+            render_colorwheels(colors);
+
+            if (typeof(currentPointsMesh) !== "undefined") {
+                threejsClearMesh(scene, currentPointsMesh);
+            }
+            currentPointsMesh = threejsRenderPoints(renderer, scene, camera, colors);
         }
-    </script>
+
+        function threejsInit(){
+            const scene = new THREE.Scene();
+
+            const container = document.getElementById("oklch-wheel-3D");
+            const camera = new THREE.PerspectiveCamera(
+                50,
+                container.clientWidth / container.clientHeight,
+                0.1,
+                100
+            );
+            camera.position.set(1, 1.5, 1);
+            camera.lookAt(new THREE.Vector3(0,0.5,0))
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+
+            const cyl_geometry = new THREE.CylinderGeometry(0.4, 0.4, 1, 16);
+            cyl_geometry.translate(0, 0.5, 0);
+            const cyl_edges = new THREE.EdgesGeometry(cyl_geometry);
+            const cyl_material = new THREE.MeshBasicMaterial({color: 0x808080});
+            const cyl_wireframe = new THREE.LineSegments(cyl_edges, cyl_material);
+
+            scene.background = new THREE.Color(0xffffff);
+            scene.add(cyl_wireframe);
+            scene.add(new THREE.AxesHelper());
+
+            return {renderer, scene, camera}
+        }
+
+        function threejsClearMesh(scene, mesh){
+            scene.remove(mesh);
+            mesh.geometry.dispose();
+            mesh.material.dispose();
+        }
+
+        function threejsRenderPoints(renderer, scene, camera, colors){
+            const pointsGeometry = new THREE.BufferGeometry();
+
+            const positions = [];
+            const three_colors = [];
+            colors.forEach(color => {
+                const position = oklchToXYZ(color.l, color.c, color.h)
+                const rgb = color.rgb
+                const three_color = new THREE.Color(
+                    rgb.r/255,
+                    rgb.g/255,
+                    rgb.b/255
+                );
+
+                positions.push(position.x, position.y, position.z);
+                three_colors.push(three_color.r, three_color.g, three_color.b);
+            });
+
+            pointsGeometry.setAttribute(
+                "position",
+                new THREE.Float32BufferAttribute(positions, 3)
+            );
+            pointsGeometry.setAttribute(
+                "color",
+                new THREE.Float32BufferAttribute(three_colors, 3)
+            );
+            const pointsMaterial = new THREE.PointsMaterial({
+                size: 0.05,
+                vertexColors: true
+            });
+            const pointsMesh = new THREE.Points(pointsGeometry, pointsMaterial);
+
+            scene.add(pointsMesh);
+
+            renderer.render(scene, camera);
+
+            return pointsMesh
+        }
+</script>
 
 {% endblock content %}

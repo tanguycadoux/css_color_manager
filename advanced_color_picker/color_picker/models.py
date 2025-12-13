@@ -55,6 +55,13 @@ class ColorFamily(models.Model):
 
     def __str__(self):
         return self.name
+    
+    def to_css_parameters(self):
+        parameters = ""
+        for color in self.colors.all():
+            parameters += f"{color.name}: {color.to_css()};\n"
+        print(parameters)
+        return parameters
 
 
 class Color(models.Model):
@@ -91,10 +98,10 @@ class Color(models.Model):
                 return f"hsl({h}, {s}%, {l}%)"
 
             case "oklch":
-                l = self.values["l"]
+                l = self.values["l"] * 100
                 c = self.values["c"]
                 h = self.values["h"]
-                return f"oklch({l} {c} {h})"
+                return f"oklch({l}% {c} {h})"
     
     def to_rgb(self):
         match self.mode:

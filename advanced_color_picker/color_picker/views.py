@@ -1,3 +1,4 @@
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import ListView
 
@@ -30,6 +31,10 @@ def viewer(request):
             context['families'].append({"family": c_fam, "colors": [c]})
         
     return render(request, "color_picker/viewer.html", context)
+
+def to_css_parameters(request, family_id):
+    family = get_object_or_404(ColorFamily, id=family_id)
+    return HttpResponse(family.to_css_parameters().replace('\n', '<br>'))
 
 def generate_colors(request, family_id):
     family = get_object_or_404(ColorFamily, id=family_id)
